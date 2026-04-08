@@ -32,6 +32,7 @@ for i in range(1, PRECISION):
 
 print("A1 =", coefficients[1])
 print("A2 =", coefficients[2])
+print("C_mac =", (np.pi/4)*(coefficients[2]-coefficients[1]))
 
 
 r = np.linspace(0, np.pi - 0.1, PLOT_PRECISION)
