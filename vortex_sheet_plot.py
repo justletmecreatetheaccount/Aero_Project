@@ -30,6 +30,10 @@ for i in range(1, PRECISION):
     dz_cos_integral, _ = integrate.quad(lambda theta: dz(theta, P) * np.cos(i * theta), 0, np.pi)
     coefficients[i] = (2/np.pi) * dz_cos_integral
 
+print("A1 =", coefficients[1])
+print("A2 =", coefficients[2])
+
+
 r = np.linspace(0, np.pi - 0.1, PLOT_PRECISION)
 
 fig, ax = plt.subplots(figsize=(8, 5))
