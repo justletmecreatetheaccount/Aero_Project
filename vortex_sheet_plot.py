@@ -49,3 +49,15 @@ ax.legend()
 
 plt.show()
 
+#Normalized gamma
+fig, ax = plt.subplots(figsize=(8, 5))
+
+ax.plot( (1/2)*(1 - np.cos(r)), gamma(r, coefficients, SPEED) / SPEED, color='blue', linewidth=2, label=r'$\gamma(x)$')
+
+ax.set_title(f"$\gamma(x)/V_\infty$ with p={P}, speed={SPEED}")
+ax.set_xlabel("x/c")
+ax.set_ylabel(r'$\gamma(x)/V_\infty$')
+ax.grid(True)
+ax.legend()
+
+plt.show()
