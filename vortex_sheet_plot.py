@@ -17,7 +17,7 @@ def dz(theta, p):
     return term1 + p - p/np.e
 
 def gamma(theta, coefficients, speed):
-    term1 = coefficients[0] * (1 - np.cos(theta))/(np.sin(theta))
+    term1 = coefficients[0] * (1 + np.cos(theta))/(np.sin(theta))
     term2 = 0
     for i in range(1, coefficients.size):
         term2 = term2 + coefficients[i] * np.sin(i * theta)
@@ -35,7 +35,7 @@ print("A2 =", coefficients[2])
 print("C_mac =", (np.pi/4)*(coefficients[2]-coefficients[1]))
 
 
-r = np.linspace(0, np.pi - 0.1, PLOT_PRECISION)
+r = np.linspace(0.2, np.pi, PLOT_PRECISION)
 
 fig, ax = plt.subplots(figsize=(8, 5))
 
