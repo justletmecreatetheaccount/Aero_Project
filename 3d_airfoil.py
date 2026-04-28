@@ -1,3 +1,4 @@
+import scipy
 import scipy.integrate as integrate
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,7 +12,7 @@ CRUISE_SPEED = 62.5
 NUMBER_OF_COEFFICIENTS = 20
 REFERENCE_THICKNESS = 0.12 #dimensionless
 
-TARGET_ZERO_LIFT_ANGLE = -3 * np.pi / 180
+TARGET_ZERO_LIFT_ANGLE = -2 * np.pi / 180
 ZETAS = [0.0, 0.25, 0.5, 0.75, 1.0]
 
 def chord_distribution(_y):
@@ -52,13 +53,17 @@ def get_camber_coefficient_at_y_locked_alpha_0(number_of_coefficients, gamma_0, 
     slice_lift_coefficient = (slice_circulation * 2) / (slice_chord * CRUISE_SPEED)
     return get_camber_coefficients(number_of_coefficients, slice_lift_coefficient, target_alpha_zero_lift)
 
-def get_camber_coefficient_at_y_locked_alpha_w(number_of_coefficients, gamma_0, target_alpha_w, alpha_induced, lift_slope, y):
+def get_camber_coefficient_at_y_locked_alpha_w(number_of_coefficients, thickness_coefficients, gamma_0, target_alpha_w, alpha_induced, lift_slope, y):
     slice_circulation = elliptic_gamma_distribution(y, gamma_0)
     slice_chord = chord_distribution(y)
     slice_lift_coefficient = (slice_circulation * 2) / (slice_chord * CRUISE_SPEED)
     print(slice_lift_coefficient)
     target_alpha_zero_lift = target_alpha_w - alpha_induced - slice_lift_coefficient/lift_slope
-    return get_camber_coefficients(number_of_coefficients, slice_lift_coefficient, target_alpha_zero_lift)
+
+    #Writing this because I am lazy
+    fake_alpha = scipy.optimize.fsolve(lambda x: target_alpha_zero_lift - get_zero_lift_angle(get_camber_coefficients(number_of_coefficients, slice_lift_coefficient, x[0]), thickness_coefficients), x0=target_alpha_zero_lift)[0]
+        
+    return get_camber_coefficients(number_of_coefficients, slice_lift_coefficient, fake_alpha)
 
 
 def get_thickness_coefficients(number_of_coefficients, reference_thickness):
@@ -128,8 +133,8 @@ def plot_airfoils(zetas, camber_coeffs, reference_thickness):
         z_c = get_camber_line_coordinates(camber_coeffs[i], x_c)
         
         # 2. Apply standard thickness approximation (perpendicular to chord)
-        z_upper = z_c + thickness / 2
-        z_lower = z_c - thickness / 2
+        z_upper = z_c + thickness
+        z_lower = z_c - thickness
         
         # 3. Plotting
         color = plt.cm.viridis(i / max(1, len(zetas) - 1))
@@ -183,7 +188,7 @@ def plot_camber_lines_only(zetas, camber_coeffs):
     
     # PRO TIP: If you comment out the line below, matplotlib will auto-scale the y-axis,
     # massively exaggerating the vertical twist and making the reflex camber highly visible!
-    plt.axis('equal') 
+    # plt.axis('equal') 
     
     plt.legend(loc='best')
     plt.grid(True, alpha=0.3)
@@ -215,7 +220,7 @@ slice_lift_coefficient = (slice_circulation * 2) / (slice_chord * CRUISE_SPEED)
 root_alpha_w = (slice_lift_coefficient/thick_lift_slope) + true_root_alpha_L0 + induced_alpha
 
 for i in range(len(ZETAS)):
-    camber_coefficients[i] = get_camber_coefficient_at_y_locked_alpha_w(NUMBER_OF_COEFFICIENTS, gamma_0, root_alpha_w, induced_alpha, thick_lift_slope, ZETAS[i]*(WING_SPAN/2))
+    camber_coefficients[i] = get_camber_coefficient_at_y_locked_alpha_w(NUMBER_OF_COEFFICIENTS, thickness_coefficients, gamma_0, root_alpha_w, induced_alpha, thick_lift_slope, ZETAS[i]*(WING_SPAN/2))
 
 
 
@@ -223,6 +228,8 @@ for i in range(len(ZETAS)):
 # Execution
 plot_airfoils(ZETAS, camber_coefficients, REFERENCE_THICKNESS)
 
+
+#ALPHA ZERO DEFINED
 camber_coefficients = np.zeros((len(ZETAS), NUMBER_OF_COEFFICIENTS))
 
 necessary_lift_coefficient = (2 * MASS * 9.81) / (AIR_DENSITY * CRUISE_SPEED**2 * (WING_SPAN**2 / ASPECT_RATIO))
@@ -238,10 +245,13 @@ gamma_0 = get_gamma_0(necessary_lift_coefficient, surface)
 # To force a symmetric (0-camber) tip where cl=0, alpha_w must perfectly equal alpha_i.
 global_alpha_w = induced_alpha
 
+print("alpha :",global_alpha_w * 180/np.pi)
+
 # Run the unified loop for all stations using the new tip-anchored alpha_w
 for i in range(len(ZETAS)):
     camber_coefficients[i] = get_camber_coefficient_at_y_locked_alpha_w(
-        NUMBER_OF_COEFFICIENTS, 
+        NUMBER_OF_COEFFICIENTS,
+        thickness_coefficients,
         gamma_0, 
         global_alpha_w, 
         induced_alpha, 
